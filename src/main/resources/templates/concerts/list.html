@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Gig Log — ConcertCrew</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --black: #0d0d0d; --dark: #1a1a1a; --darker: #050505;
+            --red: #ff3838; --red-deep: #e63946; --red-faded: #8b1a1a;
+            --cream: #f5e6c8; --cream-2: #ede0c8;
+            --yellow: #ffd60a; --pink: #ff5d8f;
+            --text: #ede0c8; --muted: #8a8580; --line: #2a2826;
+            --success: #6ee7b7; --info: #74c0fc;
+        }
+        body {
+            background: var(--black); color: var(--text); min-height: 100vh;
+            font-family: 'Courier New', 'Courier', monospace;
+        }
+        a { color: var(--red); text-decoration: none; }
+        body::before {
+            content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(255,56,56,0.04), transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255,214,10,0.03), transparent 35%);
+        }
+
+        .navbar {
+            background: var(--darker); border-bottom: 3px solid var(--red);
+            padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;
+            height: 70px; position: sticky; top: 0; z-index: 100;
+        }
+        .navbar-brand {
+            display: flex; align-items: center; gap: 0.7rem;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 1.6rem; letter-spacing: -0.5px;
+            color: var(--cream); text-transform: uppercase;
+        }
+        .navbar-brand .red { color: var(--red); }
+        .navbar-brand .icon {
+            display: inline-block; width: 28px; height: 28px;
+            background: var(--red); position: relative;
+            transform: rotate(-12deg);
+        }
+        .navbar-brand .icon::before {
+            content: '★'; position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--cream); font-size: 1.2rem;
+        }
+
+        .navbar-nav { display: flex; align-items: center; gap: 1.25rem; list-style: none; }
+        .navbar-nav a {
+            color: var(--text); font-family: 'Impact', sans-serif;
+            font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase;
+        }
+        .navbar-nav a:hover { color: var(--red); }
+        .user-badge {
+            background: var(--red); color: var(--cream);
+            padding: 0.35rem 0.85rem;
+            font-family: 'Impact', sans-serif; font-size: 0.75rem; letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
+            border: 2px solid; font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.15s; text-decoration: none;
+            font-family: inherit; font-family: 'Impact', sans-serif;
+        }
+        .btn-primary { background: var(--red); color: var(--cream); border-color: var(--red); }
+        .btn-primary:hover { background: var(--cream); color: var(--black); }
+        .btn-outline { background: transparent; color: var(--cream); border-color: var(--cream); }
+        .btn-outline:hover { background: var(--cream); color: var(--black); }
+        .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.7rem; }
+        .btn-danger-sm {
+            background: transparent; color: var(--red); border: 2px solid var(--red);
+            padding: 0.3rem 0.7rem; font-family: 'Impact', sans-serif;
+            font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+        }
+        .btn-danger-sm:hover { background: var(--red); color: var(--cream); }
+
+        .main { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem 4rem; position: relative; z-index: 1; }
+
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .page-title {
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 2.3rem; line-height: 1; text-transform: uppercase;
+            letter-spacing: -1px; color: var(--cream);
+        }
+        .page-title .red { color: var(--red); }
+        .page-title .yellow { color: var(--yellow); }
+        .count-stamp {
+            display: inline-block; padding: 0.45rem 1rem;
+            border: 2px solid var(--yellow); color: var(--yellow);
+            font-family: 'Impact', sans-serif; letter-spacing: 2px;
+            font-size: 0.8rem; text-transform: uppercase;
+            transform: rotate(-3deg);
+        }
+
+        .search-bar {
+            background: var(--dark); border: 2px solid var(--line);
+            padding: 1rem 1.2rem; margin-bottom: 2rem;
+            display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: flex-end;
+        }
+        .sg { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 140px; }
+        .sg label {
+            font-family: 'Impact', sans-serif; font-size: 0.7rem; letter-spacing: 2px;
+            color: var(--red); text-transform: uppercase;
+        }
+        .form-control, .form-select {
+            background: var(--darker); border: 1px solid var(--line); color: var(--text);
+            padding: 0.5rem 0.8rem; font-family: 'Courier New', monospace; font-size: 0.9rem;
+            appearance: none; width: 100%;
+        }
+        .form-control:focus, .form-select:focus { outline: none; border-color: var(--red); }
+        .check-wrap {
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.9rem;
+            background: var(--darker); border: 1px solid var(--line);
+        }
+        .check-wrap input { accent-color: var(--red); width: 16px; height: 16px; }
+        .check-wrap label {
+            font-family: 'Impact', sans-serif; font-size: 0.75rem; letter-spacing: 2px;
+            color: var(--text); text-transform: uppercase;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 2rem 1.5rem;
+        }
+        .card {
+            background: var(--cream); color: var(--black);
+            position: relative; transition: all 0.25s;
+            box-shadow: 6px 6px 0 var(--red-faded);
+            display: flex; flex-direction: column;
+        }
+        .card:nth-child(3n+1) { transform: rotate(-0.7deg); }
+        .card:nth-child(3n+2) { transform: rotate(0.5deg); }
+        .card:nth-child(3n+3) { transform: rotate(-0.3deg); box-shadow: 6px 6px 0 var(--red); }
+        .card:hover {
+            transform: rotate(0) translateY(-4px);
+            box-shadow: 10px 10px 0 var(--red);
+            z-index: 2;
+        }
+        /* tape strip on top */
+        .card::before {
+            content: ''; position: absolute; top: -10px; left: 30%;
+            width: 60px; height: 20px; background: var(--yellow);
+            opacity: 0.75; transform: rotate(-4deg);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 3;
+        }
+        .card:nth-child(2n)::before { left: 40%; transform: rotate(3deg); background: var(--cream-2); }
+
+        /* SOLD OUT rubber stamp for 5-star memorable shows */
+        .sold-out-stamp {
+            position: absolute; top: 35%; right: -25px;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 1.4rem; letter-spacing: 2px;
+            color: var(--red); border: 3px double var(--red);
+            padding: 0.3rem 0.9rem; transform: rotate(15deg);
+            opacity: 0.7; pointer-events: none; z-index: 4;
+            text-transform: uppercase; background: rgba(245,230,200,0.5);
+        }
+
+        .card-header {
+            padding: 1.5rem 1.2rem 0.6rem;
+            border-bottom: 2px dashed var(--black);
+        }
+        .show-meta {
+            font-family: 'Impact', sans-serif; font-size: 0.7rem;
+            letter-spacing: 2.5px; color: var(--red-deep);
+            text-transform: uppercase; margin-bottom: 0.3rem;
+        }
+        .artist-name {
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 1.7rem; line-height: 1.05; color: var(--black);
+            letter-spacing: -0.5px; text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+        .artist-name a { color: var(--black); }
+        .artist-name a:hover { color: var(--red); }
+        .tour-name {
+            font-style: italic; font-size: 0.85rem; color: var(--red-deep);
+            margin-bottom: 0.3rem;
+        }
+        .openers { font-size: 0.78rem; color: var(--black); opacity: 0.7; }
+        .openers strong {
+            font-family: 'Impact', sans-serif; font-weight: normal;
+            letter-spacing: 1.5px; font-size: 0.7rem; text-transform: uppercase;
+        }
+
+        .card-body { padding: 0.9rem 1.2rem; flex: 1; display: flex; flex-direction: column; gap: 0.7rem; }
+
+        .venue-row {
+            display: flex; flex-direction: column; gap: 0.15rem;
+            border-left: 3px solid var(--red); padding-left: 0.7rem;
+        }
+        .venue-name { font-size: 0.95rem; font-weight: bold; }
+        .venue-city {
+            font-family: 'Impact', sans-serif; font-size: 0.75rem;
+            letter-spacing: 2px; color: var(--black); opacity: 0.7;
+            text-transform: uppercase;
+        }
+        .show-date {
+            font-family: 'Impact', sans-serif; font-size: 1rem;
+            letter-spacing: 2.5px; color: var(--black);
+            text-transform: uppercase; margin-top: 0.2rem;
+        }
+
+        .badges-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .badge {
+            display: inline-block; padding: 0.18rem 0.55rem;
+            font-family: 'Impact', sans-serif; font-size: 0.65rem;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            border: 1.5px solid;
+        }
+        .badge-genre { background: var(--black); color: var(--cream); border-color: var(--black); }
+        .badge-show  { background: transparent; color: var(--red-deep); border-color: var(--red-deep); }
+        .badge-area  { background: var(--yellow); color: var(--black); border-color: var(--black); }
+
+        .stars-row { display: flex; gap: 0.5rem; align-items: center; }
+        .stars { display: inline-flex; gap: 0.1rem; font-size: 1.2rem; color: var(--red); }
+        .stars .empty { color: rgba(13,13,13,0.2); }
+
+        .price-line {
+            display: flex; gap: 0.6rem; flex-wrap: wrap; font-size: 0.78rem;
+            border-top: 1.5px dashed var(--black);
+            padding-top: 0.7rem;
+        }
+        .price-chip {
+            font-family: 'Impact', sans-serif; letter-spacing: 1.5px;
+            font-size: 0.7rem; text-transform: uppercase;
+        }
+        .price-chip strong {
+            color: var(--red-deep); font-family: 'Courier New', monospace;
+            font-size: 0.95rem; margin-left: 0.25rem;
+        }
+
+        .flags-row { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .flag-pill {
+            background: transparent; border: 1.5px dashed var(--red-deep);
+            color: var(--red-deep); padding: 0.15rem 0.5rem;
+            font-family: 'Impact', sans-serif; font-size: 0.65rem;
+            letter-spacing: 1.5px; text-transform: uppercase;
+        }
+        .flag-pill.first { background: var(--red); color: var(--cream); border-style: solid; border-color: var(--red); }
+        .flag-pill.cry   { background: var(--pink); color: var(--cream); border-color: var(--pink); }
+        .flag-pill.phone { background: var(--black); color: var(--yellow); border-color: var(--black); }
+
+        .card-footer {
+            display: flex; gap: 0.5rem;
+            padding: 0.7rem 1.2rem; border-top: 2px dashed var(--black);
+            background: rgba(255,56,56,0.04);
+        }
+        .card-footer .btn {
+            background: transparent; color: var(--black); border-color: var(--black);
+            font-size: 0.7rem;
+        }
+        .card-footer .btn:hover { background: var(--black); color: var(--cream); }
+
+        .empty-state {
+            text-align: center; padding: 5rem 2rem;
+            background: var(--dark); border: 2px dashed var(--line);
+        }
+        .empty-state h3 {
+            font-family: 'Impact', sans-serif; font-size: 1.5rem;
+            color: var(--red); letter-spacing: 3px; text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .empty-state p { color: var(--muted); }
+
+        .alert-success {
+            padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.9rem;
+            background: rgba(110,231,183,0.08); border-left: 4px solid var(--success);
+            color: var(--success); font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/concerts}">
+        <span class="icon"></span>
+        <span><span class="red">Concert</span>Crew</span>
+    </a>
+    <ul class="navbar-nav">
+        <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/concerts/new}">+ Add Show</a></li>
+        <li><a href="/swagger-ui.html" target="_blank">API</a></li>
+        <li><span class="user-badge" sec:authentication="name">user</span></li>
+        <li>
+            <form th:action="@{/auth/logout}" method="post" style="display:inline">
+                <button type="submit" class="btn btn-outline btn-sm">Logout</button>
+            </form>
+        </li>
+    </ul>
+</nav>
+
+<div class="main">
+    <div th:if="${successMessage}" class="alert-success" th:text="${successMessage}"></div>
+
+    <div class="page-header">
+        <h1 class="page-title">my <span class="red">gig</span> <span class="yellow">log</span></h1>
+        <span class="count-stamp" th:text="'★ ' + ${concerts.size()} + ' SHOWS ATTENDED ★'"></span>
+    </div>
+
+    <form class="search-bar" th:action="@{/concerts}" method="get">
+        <div class="sg" style="flex:2.5; min-width:200px;">
+            <label>artist · tour · venue · city</label>
+            <input class="form-control" type="text" name="query" th:value="${query}" placeholder="e.g. Taylor Swift, Brixton, London...">
+        </div>
+        <div class="sg">
+            <label>genre</label>
+            <select class="form-select" name="genre">
+                <option value="">all</option>
+                <option th:each="g : ${genres}" th:value="${g}"
+                        th:text="${#strings.replace(g.name(),'_',' ')}"
+                        th:selected="${selectedGenre == g}"></option>
+            </select>
+        </div>
+        <div class="sg">
+            <label>show type</label>
+            <select class="form-select" name="showType">
+                <option value="">all</option>
+                <option th:each="s : ${showTypes}" th:value="${s}"
+                        th:text="${#strings.replace(s.name(),'_',' ')}"
+                        th:selected="${selectedShowType == s}"></option>
+            </select>
+        </div>
+        <div class="check-wrap">
+            <input id="tearJerkerOnly" type="checkbox" name="tearJerkerOnly" value="true" th:checked="${tearJerkerOnly}">
+            <label for="tearJerkerOnly">★ Tear-jerkers only</label>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:flex-end;">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a th:href="@{/concerts}" class="btn btn-outline">Clear</a>
+        </div>
+    </form>
+
+    <div th:if="${concerts.isEmpty()}" class="empty-state">
+        <h3>No shows yet</h3>
+        <p>Add your first concert to start your gig log.</p>
+    </div>
+
+    <div class="grid" th:unless="${concerts.isEmpty()}">
+        <div class="card" th:each="c : ${concerts}">
+
+            <div class="sold-out-stamp" th:if="${c.rating != null and c.rating == 5}">SOLD OUT</div>
+
+            <div class="card-header">
+                <div class="show-meta">
+                    <span th:text="${#strings.replace(c.showType.name(),'_',' ')}"></span>
+                    <span th:if="${c.venueSize != null}" th:text="' · ' + ${#strings.replace(c.venueSize.name(),'_',' ')}"></span>
+                </div>
+                <div class="artist-name">
+                    <a th:href="@{/concerts/{id}(id=${c.id})}" th:text="${c.mainArtist}"></a>
+                </div>
+                <div class="tour-name" th:if="${c.tourName != null and !c.tourName.isBlank()}"
+                     th:text="${c.tourName}"></div>
+                <div class="openers" th:if="${c.openingActs != null and !c.openingActs.isBlank()}">
+                    <strong>w/</strong> <span th:text="${c.openingActs}"></span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="venue-row">
+                    <div class="venue-name" th:text="${c.venue}"></div>
+                    <div class="venue-city">
+                        <span th:text="${c.city}"></span>
+                        <span th:if="${c.country != null and !c.country.isBlank()}" th:text="' · ' + ${c.country}"></span>
+                    </div>
+                    <div class="show-date" th:text="${#temporals.format(c.dateAttended, 'dd MMM yyyy')}"></div>
+                </div>
+
+                <div class="badges-row">
+                    <span class="badge badge-genre" th:text="${#strings.replace(c.genre.name(),'_',' ')}"></span>
+                    <span class="badge badge-show" th:text="${#strings.replace(c.showType.name(),'_',' ')}"></span>
+                    <span class="badge badge-area" th:if="${c.viewingArea != null}"
+                          th:text="${#strings.replace(c.viewingArea.name(),'_',' ')}"></span>
+                </div>
+
+                <div class="stars-row" th:if="${c.rating != null}">
+                    <div class="stars">
+                        <span th:each="i : ${#numbers.sequence(1,5)}"
+                              th:classappend="${i &gt; c.rating} ? 'empty' : ''"
+                              th:text="${i &lt;= c.rating} ? '★' : '☆'"></span>
+                    </div>
+                </div>
+
+                <div class="flags-row">
+                    <span class="flag-pill first" th:if="${c.firstTimeSeen}">★ 1st time</span>
+                    <span class="flag-pill cry" th:if="${c.tearJerker}">♡ tear-jerker</span>
+                    <span class="flag-pill phone" th:if="${c.phoneFreeShow}">⊘ phone-free</span>
+                    <span class="flag-pill" th:if="${c.dancedAllNight}">danced all night</span>
+                    <span class="flag-pill" th:if="${c.boughtMerch}">bought merch</span>
+                </div>
+
+                <div class="price-line"
+                     th:if="${c.totalSpentEur != null and c.totalSpentEur.signum() &gt; 0}">
+                    <span class="price-chip">Ticket <strong th:text="'€' + ${c.ticketPriceEur != null ? c.ticketPriceEur : 0}"></strong></span>
+                    <span class="price-chip">Total <strong th:text="'€' + ${c.totalSpentEur}"></strong></span>
+                </div>
+            </div>
+
+            <div class="card-footer" sec:authorize="hasRole('ADMIN')">
+                <a th:href="@{/concerts/edit/{id}(id=${c.id})}" class="btn btn-outline btn-sm">Edit</a>
+                <form th:action="@{/concerts/delete/{id}(id=${c.id})}" method="post"
+                      onsubmit="return confirm('Remove this concert?')">
+                    <button type="submit" class="btn-danger-sm">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

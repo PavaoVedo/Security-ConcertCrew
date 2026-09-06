@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join the Crew — ConcertCrew</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --black: #0d0d0d; --cream: #f5e6c8; --red: #ff3838; --red-deep: #e63946;
+            --yellow: #ffd60a; --text: #ede0c8; --danger: #ff6b6b;
+        }
+        body { background: var(--black); color: var(--text); min-height: 100vh; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+        body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle at 20% 30%, rgba(255,56,56,0.08), transparent 40%), radial-gradient(circle at 80% 70%, rgba(255,214,10,0.06), transparent 35%); }
+
+        .ticket {
+            background: var(--cream); color: var(--black); width: 100%; max-width: 440px;
+            position: relative; z-index: 2; transform: rotate(0.6deg);
+            box-shadow: 12px 12px 0 var(--red), 12px 12px 0 1px var(--black);
+        }
+        .ticket::before, .ticket::after { content: ''; position: absolute; left: 0; right: 0; height: 12px; background-image: radial-gradient(circle at 6px 6px, var(--black) 4px, transparent 4.5px); background-size: 14px 12px; background-repeat: repeat-x; }
+        .ticket::before { top: -6px; } .ticket::after { bottom: -6px; }
+        .ticket-stub { padding: 2.5rem 2rem 2rem; }
+
+        .ticket-header { text-align: center; margin-bottom: 1.5rem; }
+        .small-cap { font-family: 'Impact','Arial Black',sans-serif; letter-spacing: 4px; font-size: 0.7rem; color: var(--red-deep); margin-bottom: 0.4rem; }
+        .brand { font-family: 'Impact','Arial Black',sans-serif; font-size: 2.4rem; line-height: 0.9; color: var(--black); letter-spacing: -1px; text-transform: uppercase; }
+        .tagline { margin-top: 0.6rem; font-size: 0.8rem; color: var(--black); opacity: 0.7; letter-spacing: 1px; }
+
+        .form-group { margin-bottom: 1.1rem; }
+        .form-label { display: block; font-family: 'Impact','Arial Black',sans-serif; font-size: 0.72rem; letter-spacing: 2px; color: var(--black); margin-bottom: 0.4rem; text-transform: uppercase; }
+        .form-control { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--black); color: var(--black); padding: 0.6rem 0.2rem; font-size: 1rem; font-family: 'Courier New',monospace; }
+        .form-control:focus { outline: none; border-bottom-color: var(--red); background: rgba(255,56,56,0.06); }
+        .form-control::placeholder { color: rgba(13,13,13,0.4); }
+
+        .btn-submit { display: block; width: 100%; padding: 0.95rem; background: var(--black); color: var(--cream); border: 3px solid var(--black); font-family: 'Impact','Arial Black',sans-serif; font-size: 1rem; letter-spacing: 4px; text-transform: uppercase; margin-top: 1.5rem; cursor: pointer; transition: all 0.15s; }
+        .btn-submit:hover { background: var(--red); border-color: var(--red); }
+        .btn-submit::before { content: '★  '; }
+
+        .alert-danger { background: rgba(255,56,56,0.1); border-left: 4px solid var(--red); color: var(--red-deep); padding: 0.7rem 1rem; margin-bottom: 1.2rem; font-size: 0.85rem; }
+        .field-error { color: var(--red); font-size: 0.78rem; margin-top: 0.3rem; }
+        .footer-link { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; color: var(--black); opacity: 0.8; }
+        .footer-link a { color: var(--red); font-family: 'Impact',sans-serif; letter-spacing: 1.5px; text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="ticket">
+    <div class="ticket-stub">
+        <div class="ticket-header">
+            <div class="small-cap">★ NEW ENTRY ★</div>
+            <div class="brand">Join the Crew</div>
+            <div class="tagline">— start tracking your shows —</div>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert-danger" th:text="${errorMessage}"></div>
+
+        <form th:action="@{/auth/register}" method="post" th:object="${registerRequest}">
+            <div class="form-group">
+                <label class="form-label" for="username">username</label>
+                <input id="username" class="form-control" type="text" th:field="*{username}" placeholder="your_handle" autocomplete="username">
+                <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="email">email</label>
+                <input id="email" class="form-control" type="email" th:field="*{email}" placeholder="you@example.com" autocomplete="email">
+                <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">password</label>
+                <input id="password" class="form-control" type="password" th:field="*{password}" placeholder="min. 6 characters" autocomplete="new-password">
+                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+            </div>
+            <button type="submit" class="btn-submit">Get the wristband</button>
+        </form>
+
+        <div class="footer-link">Already on the list? <a th:href="@{/auth/login}">Sign in</a></div>
+    </div>
+</div>
+</body>
+</html>

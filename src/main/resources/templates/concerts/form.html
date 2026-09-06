@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${editMode} ? 'Edit Concert — ConcertCrew' : 'New Concert — ConcertCrew'">Form</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --black: #0d0d0d; --dark: #1a1a1a; --darker: #050505;
+            --red: #ff3838; --red-deep: #e63946; --red-faded: #8b1a1a;
+            --cream: #f5e6c8; --cream-2: #ede0c8;
+            --yellow: #ffd60a; --pink: #ff5d8f;
+            --text: #ede0c8; --muted: #8a8580; --line: #2a2826;
+            --danger: #ff6b6b;
+        }
+        body { background: var(--black); color: var(--text); min-height: 100vh; font-family: 'Courier New', monospace; }
+        a { color: var(--red); text-decoration: none; }
+
+        .navbar { background: var(--darker); border-bottom: 3px solid var(--red); padding: 0 2rem; display: flex; align-items: center; height: 70px; }
+        .navbar-brand { display: flex; align-items: center; gap: 0.7rem; font-family: 'Impact','Arial Black',sans-serif; font-size: 1.6rem; letter-spacing: -0.5px; color: var(--cream); text-transform: uppercase; }
+        .navbar-brand .red { color: var(--red); }
+        .navbar-brand .icon { display: inline-block; width: 28px; height: 28px; background: var(--red); position: relative; transform: rotate(-12deg); }
+        .navbar-brand .icon::before { content: '★'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--cream); font-size: 1.2rem; }
+
+        .btn { display: inline-flex; align-items: center; padding: 0.7rem 1.3rem; border: 2px solid; font-family: 'Impact','Arial Black',sans-serif; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+        .btn-primary { background: var(--red); color: var(--cream); border-color: var(--red); }
+        .btn-primary:hover { background: var(--cream); color: var(--black); }
+        .btn-outline { background: transparent; color: var(--cream); border-color: var(--cream); }
+        .btn-outline:hover { background: var(--cream); color: var(--black); }
+
+        .main { max-width: 920px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+        .breadcrumb { font-family: 'Impact',sans-serif; font-size: 0.78rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 1.5rem; text-transform: uppercase; }
+        .breadcrumb a { color: var(--red); }
+
+        .form-card { background: var(--cream); color: var(--black); padding: 2.5rem; box-shadow: 12px 12px 0 var(--red-faded); position: relative; }
+        .form-card::before, .form-card::after { content: ''; position: absolute; left: 0; right: 0; height: 12px; background-image: radial-gradient(circle at 6px 6px, var(--black) 4px, transparent 4.5px); background-size: 14px 12px; background-repeat: repeat-x; }
+        .form-card::before { top: -6px; } .form-card::after { bottom: -6px; }
+
+        .form-title { font-family: 'Impact','Arial Black',sans-serif; font-size: 2.2rem; line-height: 1; color: var(--black); letter-spacing: -0.5px; text-transform: uppercase; margin-bottom: 1.75rem; }
+        .form-title .red { color: var(--red); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .fg { display: flex; flex-direction: column; gap: 0.35rem; }
+        .fg.full { grid-column: 1 / -1; }
+        .fg label { font-family: 'Impact',sans-serif; font-size: 0.72rem; letter-spacing: 2px; color: var(--red-deep); text-transform: uppercase; }
+        .required::after { content: ' *'; color: var(--red); }
+        .form-control, .form-select { background: rgba(13,13,13,0.04); border: 2px solid var(--black); color: var(--black); padding: 0.65rem 0.85rem; font-size: 0.95rem; font-family: 'Courier New',monospace; width: 100%; appearance: none; transition: all 0.15s; }
+        .form-control:focus, .form-select:focus { outline: none; border-color: var(--red); background: rgba(255,56,56,0.06); }
+        .form-control::placeholder { color: rgba(13,13,13,0.4); }
+        textarea.form-control { resize: vertical; min-height: 100px; line-height: 1.5; }
+        .field-error { color: var(--red); font-size: 0.78rem; }
+
+        .section-divider {
+            grid-column: 1 / -1; font-family: 'Impact','Arial Black',sans-serif;
+            font-size: 0.95rem; letter-spacing: 3px; color: var(--red-deep);
+            padding: 0.8rem 0 0.3rem; margin-top: 0.7rem;
+            border-top: 3px solid var(--red-deep); text-transform: uppercase;
+            display: flex; align-items: center; gap: 0.6rem;
+        }
+        .section-divider::before { content: '★'; color: var(--yellow); }
+
+        .checkbox-group { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; }
+        .checkbox-wrap { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; background: rgba(13,13,13,0.04); border: 2px solid var(--black); cursor: pointer; transition: all 0.15s; }
+        .checkbox-wrap:hover { border-color: var(--red); background: rgba(255,56,56,0.06); }
+        .checkbox-wrap input { width: 18px; height: 18px; accent-color: var(--red); cursor: pointer; }
+        .checkbox-title { font-family: 'Impact',sans-serif; font-size: 0.78rem; letter-spacing: 1.5px; color: var(--black); text-transform: uppercase; }
+
+        .form-actions { display: flex; gap: 0.7rem; justify-content: flex-end; margin-top: 1.75rem; padding-top: 1.25rem; border-top: 2px dashed var(--black); }
+        .form-actions .btn { background: transparent; color: var(--black); border-color: var(--black); }
+        .form-actions .btn:hover:not(.btn-primary) { background: var(--black); color: var(--cream); }
+        .form-actions .btn-primary { background: var(--red); color: var(--cream); border-color: var(--red); }
+        .form-actions .btn-primary:hover { background: var(--black); border-color: var(--black); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/concerts}">
+        <span class="icon"></span>
+        <span><span class="red">Concert</span>Crew</span>
+    </a>
+</nav>
+
+<div class="main">
+    <div class="breadcrumb">
+        <a th:href="@{/concerts}">my gig log</a> ★
+        <span th:text="${editMode} ? 'edit concert' : 'new concert'"></span>
+    </div>
+
+    <div class="form-card">
+        <h2 class="form-title">
+            <span th:text="${editMode} ? 'Edit' : 'Log'"></span>
+            <span class="red">concert</span>
+        </h2>
+
+        <form th:action="${editMode} ? @{/concerts/edit/{id}(id=${concert.id})} : @{/concerts/new}"
+              method="post" th:object="${concert}">
+
+            <div class="form-grid">
+                <div class="section-divider">Show details</div>
+
+                <div class="fg full">
+                    <label class="required">Main artist / headliner</label>
+                    <input class="form-control" type="text" th:field="*{mainArtist}" placeholder="e.g. Taylor Swift">
+                    <span class="field-error" th:if="${#fields.hasErrors('mainArtist')}" th:errors="*{mainArtist}"></span>
+                </div>
+
+                <div class="fg full">
+                    <label>Tour name</label>
+                    <input class="form-control" type="text" th:field="*{tourName}" placeholder="e.g. The Eras Tour">
+                </div>
+
+                <div class="fg full">
+                    <label>Opening acts</label>
+                    <input class="form-control" type="text" th:field="*{openingActs}" placeholder="e.g. Paramore, Gracie Abrams">
+                </div>
+
+                <div class="fg">
+                    <label class="required">Genre</label>
+                    <select class="form-select" th:field="*{genre}">
+                        <option value="">select...</option>
+                        <option th:each="g : ${genres}" th:value="${g}" th:text="${#strings.replace(g.name(),'_',' ')}"></option>
+                    </select>
+                    <span class="field-error" th:if="${#fields.hasErrors('genre')}" th:errors="*{genre}"></span>
+                </div>
+
+                <div class="fg">
+                    <label>Secondary genre</label>
+                    <select class="form-select" th:field="*{secondaryGenre}">
+                        <option value="">none</option>
+                        <option th:each="g : ${genres}" th:value="${g}" th:text="${#strings.replace(g.name(),'_',' ')}"></option>
+                    </select>
+                </div>
+
+                <div class="fg">
+                    <label class="required">Show type</label>
+                    <select class="form-select" th:field="*{showType}">
+                        <option value="">select...</option>
+                        <option th:each="s : ${showTypes}" th:value="${s}" th:text="${#strings.replace(s.name(),'_',' ')}"></option>
+                    </select>
+                    <span class="field-error" th:if="${#fields.hasErrors('showType')}" th:errors="*{showType}"></span>
+                </div>
+
+                <div class="fg">
+                    <label class="required">Date attended</label>
+                    <input class="form-control" type="date" th:field="*{dateAttended}">
+                    <span class="field-error" th:if="${#fields.hasErrors('dateAttended')}" th:errors="*{dateAttended}"></span>
+                </div>
+
+                <div class="section-divider">Venue &amp; viewing area</div>
+
+                <div class="fg">
+                    <label class="required">Venue</label>
+                    <input class="form-control" type="text" th:field="*{venue}" placeholder="e.g. Wembley Stadium">
+                    <span class="field-error" th:if="${#fields.hasErrors('venue')}" th:errors="*{venue}"></span>
+                </div>
+
+                <div class="fg">
+                    <label class="required">City</label>
+                    <input class="form-control" type="text" th:field="*{city}" placeholder="e.g. London">
+                    <span class="field-error" th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></span>
+                </div>
+
+                <div class="fg">
+                    <label>Country</label>
+                    <input class="form-control" type="text" th:field="*{country}" placeholder="e.g. UK">
+                </div>
+
+                <div class="fg">
+                    <label>Viewing area</label>
+                    <select class="form-select" th:field="*{viewingArea}">
+                        <option value="">unspecified</option>
+                        <option th:each="v : ${viewingAreas}" th:value="${v}" th:text="${#strings.replace(v.name(),'_',' ')}"></option>
+                    </select>
+                </div>
+
+                <div class="fg full">
+                    <label>Venue size class</label>
+                    <select class="form-select" th:field="*{venueSize}">
+                        <option value="">unspecified</option>
+                        <option th:each="v : ${venueSizes}" th:value="${v}" th:text="${#strings.replace(v.name(),'_',' ')}"></option>
+                    </select>
+                </div>
+
+                <div class="section-divider">Costs</div>
+
+                <div class="fg">
+                    <label>Ticket price (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" th:field="*{ticketPriceEur}" placeholder="120.00">
+                </div>
+
+                <div class="fg">
+                    <label>Merch spent (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" th:field="*{merchSpentEur}" placeholder="60.00">
+                </div>
+
+                <div class="fg full">
+                    <label>Travel cost (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" th:field="*{travelCostEur}" placeholder="180.00">
+                </div>
+
+                <div class="section-divider">Quality scores</div>
+
+                <div class="fg">
+                    <label>Overall rating (1-5)</label>
+                    <input class="form-control" type="number" min="1" max="5" th:field="*{rating}" placeholder="5">
+                </div>
+
+                <div class="fg">
+                    <label>Vibe (1-10)</label>
+                    <input class="form-control" type="number" min="1" max="10" th:field="*{vibeScore}" placeholder="10">
+                </div>
+
+                <div class="fg">
+                    <label>Setlist (1-10)</label>
+                    <input class="form-control" type="number" min="1" max="10" th:field="*{setlistScore}" placeholder="10">
+                </div>
+
+                <div class="fg">
+                    <label>Production (1-10)</label>
+                    <input class="form-control" type="number" min="1" max="10" th:field="*{productionScore}" placeholder="10">
+                </div>
+
+                <div class="fg">
+                    <label>Crowd energy (1-10)</label>
+                    <input class="form-control" type="number" min="1" max="10" th:field="*{crowdEnergyScore}" placeholder="9">
+                </div>
+
+                <div class="fg">
+                    <label>Vocal form (1-10)</label>
+                    <input class="form-control" type="number" min="1" max="10" th:field="*{vocalFormScore}" placeholder="10">
+                </div>
+
+                <div class="section-divider">Set numbers</div>
+
+                <div class="fg">
+                    <label>Duration (minutes)</label>
+                    <input class="form-control" type="number" min="0" max="600" th:field="*{durationMinutes}" placeholder="195">
+                </div>
+
+                <div class="fg">
+                    <label>Songs played</label>
+                    <input class="form-control" type="number" min="0" max="100" th:field="*{songsPlayed}" placeholder="44">
+                </div>
+
+                <div class="fg full">
+                    <label>Encore songs</label>
+                    <input class="form-control" type="number" min="0" max="20" th:field="*{encoreCount}" placeholder="3">
+                </div>
+
+                <div class="section-divider">Flags</div>
+
+                <div class="checkbox-group">
+                    <label class="checkbox-wrap" for="phoneFreeShow">
+                        <input id="phoneFreeShow" type="checkbox" th:field="*{phoneFreeShow}">
+                        <span class="checkbox-title">⊘ Phone-free / Yondr</span>
+                    </label>
+                    <label class="checkbox-wrap" for="firstTimeSeen">
+                        <input id="firstTimeSeen" type="checkbox" th:field="*{firstTimeSeen}">
+                        <span class="checkbox-title">★ First time seeing</span>
+                    </label>
+                    <label class="checkbox-wrap" for="tearJerker">
+                        <input id="tearJerker" type="checkbox" th:field="*{tearJerker}">
+                        <span class="checkbox-title">♡ Tear-jerker</span>
+                    </label>
+                    <label class="checkbox-wrap" for="dancedAllNight">
+                        <input id="dancedAllNight" type="checkbox" th:field="*{dancedAllNight}">
+                        <span class="checkbox-title">Danced all night</span>
+                    </label>
+                    <label class="checkbox-wrap" for="boughtMerch">
+                        <input id="boughtMerch" type="checkbox" th:field="*{boughtMerch}">
+                        <span class="checkbox-title">Bought merch</span>
+                    </label>
+                </div>
+
+                <div class="section-divider">Crew &amp; memories</div>
+
+                <div class="fg full">
+                    <label>Crew (who you went with)</label>
+                    <input class="form-control" type="text" th:field="*{crewWith}" placeholder="e.g. Mia, Hanna, Ema (swifties since debut)">
+                </div>
+
+                <div class="fg full">
+                    <label>Favorite song of the night</label>
+                    <input class="form-control" type="text" th:field="*{favoriteSong}" placeholder="e.g. All Too Well (10 Minute Version)">
+                </div>
+
+                <div class="fg full">
+                    <label>Best moment</label>
+                    <textarea class="form-control" rows="2" th:field="*{bestMoment}" placeholder="The Folklore set under the cabin..."></textarea>
+                </div>
+
+                <div class="fg full">
+                    <label>Mood / vibe tags</label>
+                    <input class="form-control" type="text" th:field="*{moodTags}" placeholder="e.g. Cathartic, generational, surreal, friendship bracelets traded">
+                </div>
+
+                <div class="section-divider">Notes</div>
+
+                <div class="fg full">
+                    <label>Setlist notes</label>
+                    <textarea class="form-control" th:field="*{setlistNotes}" placeholder="44 songs across 10 eras, surprise songs..."></textarea>
+                </div>
+
+                <div class="fg full">
+                    <label>Personal notes</label>
+                    <textarea class="form-control" th:field="*{personalNotes}" placeholder="Private thoughts, who you went with, things to remember..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a th:href="@{/concerts}" class="btn">Cancel</a>
+                <button type="submit" class="btn btn-primary"
+                        th:text="${editMode} ? 'Save changes' : 'Log this show'"></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
